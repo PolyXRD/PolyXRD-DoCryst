@@ -22,13 +22,22 @@ SPLASH_MS = 1200
 
 
 def _close_boot_splash() -> None:
-    """关闭 PyInstaller bootloader 启动图（仅打包态存在 pyi_splash）。"""
+    """关闭 PyInstaller bootloader 启动图（仅打包态且 spec 配置了 Splash 时）。
+
+    以 ``_PYI_SPLASH_IPC`` 环境变量守卫：未配置 Splash 的构建（如 Setup 版）
+    里 pyi_splash 模块虽可能存在但 import 即报 KeyError 并向 stderr 打印
+    噪音，先查环境变量可彻底避免。
+    """
+    import os
+
+    if not os.environ.get("_PYI_SPLASH_IPC"):
+        return
     try:
         import pyi_splash
 
         pyi_splash.close()
     except Exception:
-        pass  # 开发态无该模块 —— 静默跳过
+        pass  # 开发态或启动图已失效 —— 静默跳过
 
 
 def main() -> int:
