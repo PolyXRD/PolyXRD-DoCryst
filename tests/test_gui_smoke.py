@@ -79,6 +79,30 @@ def test_full_flow_auto_analyze(window, pattern_file):
     assert window.canvas._has_model
 
 
+def test_analysis_via_worker_thread(window, qapp):
+    """回归：真实 _run_analysis 链路（Worker 线程 + BusyDialog 模态循环）。
+
+    v1.0.0 验收时发现：workers.py 缺 QVBoxLayout import，点击「自动分析」
+    在忙窗构造阶段抛 NameError，界面无任何反馈（上面 _run_job 绕开了忙窗，
+    故未捕获）。本测试走完整线程 + 模态忙窗路径。
+    """
+    import time
+
+    errors: list[str] = []
+    orig_failed = window._on_task_failed
+    window._on_task_failed = lambda tb: (errors.append(tb), orig_failed(tb))
+    window.run_auto()  # 缺 import 等构造期错误会在此直接抛出
+    t0 = time.time()
+    while ((window._worker is not None or window._busy is not None)
+           and time.time() - t0 < 60):
+        qapp.processEvents()
+        time.sleep(0.01)
+    assert not errors, errors[0]
+    sess = window._session()
+    assert sess.result is not None
+    assert sess.result.fit is not None
+
+
 def test_manual_peak_add_delete_undo(window):
     _run_job(window, window._job_auto)
     sess = window._session()

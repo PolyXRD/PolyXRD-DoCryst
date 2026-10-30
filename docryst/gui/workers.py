@@ -11,7 +11,8 @@ import time
 import traceback
 
 from PySide6.QtCore import QThread, QTimer, Signal
-from PySide6.QtWidgets import QDialog, QLabel, QPushButton, QWidget
+from PySide6.QtWidgets import (QDialog, QLabel, QPushButton, QVBoxLayout,
+                               QWidget)
 
 from docryst.i18n import tr
 

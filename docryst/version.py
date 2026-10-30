@@ -3,7 +3,7 @@
 改版本号只需改本文件：spec / build_*.bat / 报告抬头 / 关于对话框均读取此处。
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 APP_NAME = "PolyXRD DoCryst"
 APP_TAGLINE = "XRD 结晶度分峰定量分析（结晶相 / 非晶相面积比）"
