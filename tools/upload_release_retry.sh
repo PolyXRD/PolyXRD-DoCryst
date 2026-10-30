@@ -1,14 +1,21 @@
 #!/bin/bash
 # Robust GitHub release uploader with retry/backoff.
+# Usage: bash upload_release_retry.sh v1.0.1
 # Handles: leftover draft release, partial asset upload, transient connection resets.
+TAG="${1:?usage: upload_release_retry.sh vX.Y.Z}"
+VER="${TAG#v}"
 GH="/c/Program Files/GitHub CLI/gh.exe"
 REPO="PolyXRD/PolyXRD-DoCryst"
-TAG="v1.0.0"
-ASSETS=("dist/PolyXRD-DoCryst-v1.0.0.exe" "dist/PolyXRD-DoCryst-v1.0.0-Setup.exe")
-NOTES="docs/RELEASE_NOTES_v1.0.0.md"
-TITLE="PolyXRD DoCryst v1.0.0 稳定版"
+ASSETS=("dist/PolyXRD-DoCryst-v$VER.exe" "dist/PolyXRD-DoCryst-v$VER-Setup.exe")
+NOTES="docs/RELEASE_NOTES_$TAG.md"
+TITLE="PolyXRD DoCryst $TAG 稳定版"
 MAX=30
 SLEEP=90
+
+for f in "${ASSETS[@]}"; do
+  [ -f "$f" ] || { echo "missing asset: $f"; exit 1; }
+done
+[ -f "$NOTES" ] || { echo "missing notes: $NOTES"; exit 1; }
 
 api() { "$GH" api "$@" 2>&1; }
 
@@ -18,7 +25,6 @@ for attempt in $(seq 1 $MAX); do
   state=$(api "repos/$REPO/releases" --jq '.[] | select(.tag_name=="'"$TAG"'") | {id, draft, assets: [.assets[].name]} | tostring')
   if [ -n "$state" ]; then
     echo "release exists: $state"
-    rid=$(echo "$state" | sed 's/{"id":\([0-9]*\).*/\1/')
     published=$(echo "$state" | grep -o '"draft":false')
     have1=$(echo "$state" | grep -c "$(basename ${ASSETS[0]})" || true)
     have2=$(echo "$state" | grep -c "$(basename ${ASSETS[1]})" || true)
